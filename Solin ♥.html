@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>♥ Solin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Parisienne&family=Noto+Kufi+Arabic:wght@400;600;700&family=Amiri:wght@400;700&family=Lateef&family=Vazirmatn:wght@400;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:#06020a;color:#fff;overflow:hidden;font-family:"Noto Kufi Arabic","Vazirmatn","Amiri","Segoe UI",Tahoma,sans-serif}
+body{background:radial-gradient(ellipse at 50% 40%,#2e0510 0%,#06020a 70%)}
+#ask{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;z-index:5;transition:opacity 1s}
+#ask h1{font-size:clamp(26px,7vw,48px);margin:0;text-align:center;text-shadow:0 0 24px #c1001f;animation:glow 2.4s ease-in-out infinite}
+.hi{margin:0;font-size:clamp(22px,6vw,38px);font-weight:700;color:#ff8a95;text-shadow:0 0 18px #c1001f;animation:glow 2.4s ease-in-out infinite}
+.btns{display:flex;gap:22px;align-items:center;justify-content:center;min-height:80px}
+button{font:inherit;font-size:22px;padding:12px 38px;border:2px solid #c1121f;background:rgba(193,18,31,.22);color:#fff;border-radius:14px;cursor:pointer;transition:transform .25s,background .25s;box-shadow:0 0 18px rgba(193,18,31,.55)}
+button:hover{background:rgba(193,18,31,.5)}
+.hi,h1,button{line-height:1.8}
+#no{position:relative}
+#show{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 1.5s}
+#show.on{opacity:1}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+#msg{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;direction:ltr;font-family:-apple-system,system-ui,sans-serif;font-weight:400;font-size:clamp(20px,6vw,34px);line-height:1.6;white-space:normal;color:#fff;text-shadow:0 2px 3px #000,0 0 14px #c1001f;opacity:0;transition:opacity 2s 3.5s;padding:0 14%}
+.n1{font-size:1.5em}
+#show.on #msg{opacity:1;animation:beat 1.4s ease-in-out 5s infinite}
+.fl{position:fixed;bottom:-40px;color:#c1121f;opacity:.7;pointer-events:none;animation:up linear forwards;z-index:1}
+@keyframes up{to{transform:translateY(-110vh) rotate(25deg);opacity:0}}
+@keyframes glow{50%{text-shadow:0 0 44px #e0102e}}
+@keyframes beat{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(-50%) scale(1.07)}}
+</style>
+</head>
+<body>
+<div id="ask">
+  <p class="hi">سڵاو عەسەبی گیان ❤️</p>
+  <h1>ئایا خۆشت دەوێم؟ 🥲</h1>
+  <div class="btns">
+    <button id="yes">بەڵێ ❤️</button>
+    <button id="no">نەخێر</button>
+  </div>
+</div>
+<div id="show">
+  <canvas id="c"></canvas>
+  <div id="msg">𝘚𝘰𝘭𝘪𝘯 𝘎𝘺𝘢𝘯 𝘡𝘰𝘳𝘮 𝘟𝘰𝘴𝘩 𝘢𝘸𝘦𝘵 𝘘𝘶𝘳𝘣𝘢𝘯𝘵 𝘣𝘮♥️</div>
+</div>
+<script>
+const ask=document.getElementById('ask'),show=document.getElementById('show'),
+yes=document.getElementById('yes'),no=document.getElementById('no'),
+cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let started=false,yesScale=1;
+
+// floating hearts
+function floaty(){
+  const e=document.createElement('div');e.className='fl';e.textContent=['♥','♥','❤️'][Math.random()*3|0];
+  e.style.left=Math.random()*100+'vw';e.style.fontSize=(14+Math.random()*26)+'px';
+  e.style.animationDuration=(5+Math.random()*6)+'s';document.body.appendChild(e);
+  setTimeout(()=>e.remove(),11000);
+}
+setInterval(floaty,500);
+
+// the "No" button runs away
+function dodge(e){
+  e.preventDefault();
+  const m=document.querySelector('.btns').getBoundingClientRect();
+  const x=(Math.random()-.5)*Math.min(innerWidth-140,260),y=(Math.random()-.5)*200;
+  no.style.transform=`translate(${x}px,${y}px)`;
+  yesScale=Math.min(yesScale+.15,2);yes.style.transform=`scale(${yesScale})`;
+}
+no.addEventListener('mouseenter',dodge);
+no.addEventListener('touchstart',dodge,{passive:false});
+no.addEventListener('click',dodge);
+
+yes.addEventListener('click',()=>{
+  ask.style.opacity=0;setTimeout(()=>ask.style.display='none',1000);
+  show.classList.add('on');start();
+});
+
+// heart built from "I love you"
+const TXT='I love you';
+let items=[],t0=0,W,H,dpr;
+function heartPt(t){return[16*Math.pow(Math.sin(t),3),13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)]}
+function build(){
+  dpr=devicePixelRatio||1;W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;
+  const S=Math.min(W/36,H/30),cx=W/2,cy=H/2+S*1.2,fs=Math.max(11,S*.8);
+  ctx.font=`400 ${fs}px "Parisienne","Dancing Script",cursive`;
+  const tw=ctx.measureText(TXT).width,gap=fs*.5;
+  items=[];
+  [[1,1],[.86,.9],[.72,.8]].forEach(([k,al],li)=>{
+    const N=3000;let acc=0,prev=null;
+    for(let i=0;i<=N;i++){
+      const t=i/N*Math.PI*2,[hx,hy]=heartPt(t),x=cx+hx*S*k,y=cy-hy*S*k;
+      if(prev){acc+=Math.hypot(x-prev[0],y-prev[1]);
+        if(acc>=tw+gap){
+          let a=Math.atan2(y-prev[1],x-prev[0]);
+          if(Math.abs(a)>Math.PI/2)a+=Math.PI;
+          items.push({x,y,a,fs,al,li,ang:t});acc=0;
+        }}
+      prev=[x,y];
+    }
+  });
+  items.sort((p,q)=>p.ang-q.ang);
+  items.forEach((it,i)=>it.d=i/items.length*3200+it.li*250);
+  window.cx=cx;window.cy=cy;
+}
+function frame(now){
+  if(!t0)t0=now;const el=now-t0;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const beat=1+Math.max(0,Math.sin(Math.max(0,el-4500)/1400*Math.PI*2))*.035;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const it of items){
+    if(el<it.d)continue;
+    const p=Math.min(1,(el-it.d)/500);
+    ctx.save();ctx.translate(cx_(it.x,beat),cy_(it.y,beat));ctx.rotate(it.a);
+    ctx.font=`400 ${it.fs}px "Parisienne","Dancing Script",cursive`;
+    const g=.55+.45*Math.sin(el/600+it.ang*3),m=Math.min(1,Math.max(0,(el-3500)/2500));
+    ctx.globalAlpha=p*it.al;
+    ctx.fillStyle=`hsl(${(346+g*8)*(1-m)+(356+g*4)*m},${(80+g*10)*(1-m)+85*m}%,${(48+g*10)*(1-m)+(26+g*6)*m}%)`;
+    ctx.shadowColor=m>.5?'#8b0016':'#d11a3a';ctx.shadowBlur=8;
+    ctx.fillText(TXT,0,0);ctx.restore();
+  }
+  requestAnimationFrame(frame);
+}
+const cx_=(x,b)=>window.cx+(x-window.cx)*b, cy_=(y,b)=>window.cy+(y-window.cy)*b;
+async function start(){if(started)return;started=true;try{await document.fonts.load('20px "Parisienne"');await document.fonts.load('700 40px "Dancing Script"')}catch(e){}build();requestAnimationFrame(frame)}
+addEventListener('resize',()=>{if(started){build()}});
+</script>
+</body>
+</html>
